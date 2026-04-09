@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from "react";
-import api from "../api";
+import { notificationsAPI } from "../api";
 import { useAuth } from "./AuthContext";
 
 const NotificationContext = createContext(null);
@@ -9,14 +9,10 @@ export function NotificationProvider({ children }) {
   const [notifications, setNotifications] = useState([]);
   const unreadCount = notifications.filter((n) => !n.read).length;
 
-  const fetchNotifications = useCallback(async () => {
+  const fetchNotifications = useCallback(() => {
     if (!user) return;
-    try {
-      const { data } = await api.get("/notifications");
-      setNotifications(data);
-    } catch {
-      /* ignore */
-    }
+    const data = notificationsAPI.getForUser(user._id);
+    setNotifications(data);
   }, [user]);
 
   useEffect(() => {
@@ -25,13 +21,14 @@ export function NotificationProvider({ children }) {
     return () => clearInterval(interval);
   }, [fetchNotifications]);
 
-  const markAllRead = async () => {
-    await api.put("/notifications/read-all");
+  const markAllRead = () => {
+    if (!user) return;
+    notificationsAPI.markAllRead(user._id);
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
-  const markRead = async (id) => {
-    await api.put(`/notifications/${id}/read`);
+  const markRead = (id) => {
+    notificationsAPI.markRead(id);
     setNotifications((prev) =>
       prev.map((n) => (n._id === id ? { ...n, read: true } : n))
     );

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import api from "../api";
+import { commentsAPI } from "../api";
 import { useAuth } from "../context/AuthContext";
 import { useNotifications } from "../context/NotificationContext";
 import { FiSend, FiCornerDownRight, FiAtSign } from "react-icons/fi";
@@ -13,10 +13,9 @@ export default function CommentSection({ eventId }) {
   const [userSuggestions, setUserSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  const fetchComments = useCallback(async () => {
+  const fetchComments = useCallback(() => {
     try {
-      const { data } = await api.get(`/events/${eventId}/comments`);
-      setComments(data);
+      setComments(commentsAPI.getByEvent(eventId));
     } catch {
       /* ignore */
     }
@@ -32,21 +31,16 @@ export default function CommentSection({ eventId }) {
     return matches ? matches.map((m) => m.slice(1)) : [];
   };
 
-  // User search for tagging
-  const handleTextChange = async (e) => {
+  // User search for @mention tagging
+  const handleTextChange = (e) => {
     const val = e.target.value;
     setText(val);
 
-    // Check if user is typing @mention
     const atMatch = val.match(/@(\w*)$/);
     if (atMatch && atMatch[1].length >= 1) {
-      try {
-        const { data } = await api.get(`/users/search?q=${atMatch[1]}`);
-        setUserSuggestions(data);
-        setShowSuggestions(data.length > 0);
-      } catch {
-        setShowSuggestions(false);
-      }
+      const suggestions = commentsAPI.searchUsers(atMatch[1]);
+      setUserSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
     } else {
       setShowSuggestions(false);
     }
@@ -58,16 +52,12 @@ export default function CommentSection({ eventId }) {
     setShowSuggestions(false);
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (!text.trim()) return;
 
     try {
-      await api.post(`/events/${eventId}/comment`, {
-        text: text.trim(),
-        parentComment: replyTo,
-        taggedUsernames: extractTags(text),
-      });
+      commentsAPI.add(eventId, text.trim(), replyTo, extractTags(text), user._id);
       setText("");
       setReplyTo(null);
       fetchComments();
@@ -139,7 +129,6 @@ export default function CommentSection({ eventId }) {
 function CommentItem({ comment, getReplies, onReply, depth }) {
   const replies = getReplies(comment._id);
 
-  // Highlight @mentions in text
   const renderText = (txt) => {
     return txt.split(/(@\w+)/g).map((part, i) =>
       part.startsWith("@") ? (

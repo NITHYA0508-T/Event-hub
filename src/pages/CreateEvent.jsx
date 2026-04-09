@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api";
+import { eventsAPI } from "../api";
+import { useAuth } from "../context/AuthContext";
 
 export default function CreateEvent() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -15,14 +17,14 @@ export default function CreateEvent() {
 
   const categories = ["General", "Tech", "Sports", "Music", "Education", "Social", "Other"];
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     setError("");
     try {
-      const { data } = await api.post("/events", form);
+      const data = eventsAPI.create(form, user._id);
       navigate(`/events/${data._id}`);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to create event");
+      setError(err.message || "Failed to create event");
     }
   };
 

@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import api from "../api";
+import { authAPI } from "../api";
 
 const AuthContext = createContext(null);
 
@@ -8,16 +8,15 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
     const stored = localStorage.getItem("user");
-    if (token && stored) {
+    if (stored) {
       setUser(JSON.parse(stored));
     }
     setLoading(false);
   }, []);
 
   const login = async (email, password) => {
-    const { data } = await api.post("/auth/login", { email, password });
+    const data = authAPI.login(email, password);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);
@@ -25,11 +24,7 @@ export function AuthProvider({ children }) {
   };
 
   const register = async (username, email, password) => {
-    const { data } = await api.post("/auth/register", {
-      username,
-      email,
-      password,
-    });
+    const data = authAPI.register(username, email, password);
     localStorage.setItem("token", data.token);
     localStorage.setItem("user", JSON.stringify(data.user));
     setUser(data.user);

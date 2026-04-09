@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../api";
+import { eventsAPI } from "../api";
 import { FiCalendar, FiMapPin } from "react-icons/fi";
 
 export default function EventList() {
@@ -8,11 +8,13 @@ export default function EventList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api
-      .get("/events")
-      .then(({ data }) => setEvents(data))
-      .catch(() => {})
-      .finally(() => setLoading(false));
+    try {
+      setEvents(eventsAPI.getAll());
+    } catch {
+      /* ignore */
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   if (loading) return <div className="loading">Loading events...</div>;

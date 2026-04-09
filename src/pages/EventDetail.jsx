@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import api from "../api";
+import { eventsAPI } from "../api";
 import { useAuth } from "../context/AuthContext";
 import CommentSection from "../components/CommentSection";
 import { FiCalendar, FiMapPin, FiEdit2, FiTrash2 } from "react-icons/fi";
@@ -14,9 +14,9 @@ export default function EventDetail() {
   const [form, setForm] = useState({});
   const [loading, setLoading] = useState(true);
 
-  const fetchEvent = useCallback(async () => {
+  const fetchEvent = useCallback(() => {
     try {
-      const { data } = await api.get(`/events/${id}`);
+      const data = eventsAPI.getById(id);
       setEvent(data);
       setForm({
         title: data.title,
@@ -36,10 +36,10 @@ export default function EventDetail() {
     fetchEvent();
   }, [fetchEvent]);
 
-  const handleUpdate = async (e) => {
+  const handleUpdate = (e) => {
     e.preventDefault();
     try {
-      const { data } = await api.put(`/events/${id}/update`, form);
+      const data = eventsAPI.update(id, form, user._id);
       setEvent(data);
       setEditing(false);
     } catch {
@@ -47,9 +47,9 @@ export default function EventDetail() {
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!window.confirm("Delete this event and all its comments?")) return;
-    await api.delete(`/events/${id}`);
+    eventsAPI.delete(id, user._id);
     navigate("/");
   };
 
